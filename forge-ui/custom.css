@@ -1,0 +1,42 @@
+/**
+ * ============================================
+ * FORGE UI - CUSTOM STYLES
+ * ============================================
+ *
+ * Your custom CSS overrides go here.
+ * This file loads AFTER styles.css, so any rules
+ * here will override the defaults.
+ *
+ * TIP: Copy a selector from styles.css and modify it here.
+ *
+ * EXAMPLES:
+ *
+ * -- Change accent color --
+ * :root {
+ *     --forge-accent: #ff6b6b;
+ * }
+ *
+ * -- Make assistant messages wider --
+ * .forge-message--assistant {
+ *     max-width: 90%;
+ * }
+ *
+ * -- Hide the sidebar --
+ * .forge-sidebar {
+ *     display: none;
+ * }
+ *
+ * -- Custom font --
+ * :root {
+ *     --forge-font-family: 'Your Font', sans-serif;
+ * }
+ *
+ */
+
+/* Your custom styles below */
+
+/*.forge-message.forge-message--tool-use */
+.forge-message.forge-message--tool-use pre.forge-code {
+    padding: 1rem;
+	font-size: 10px;
+}

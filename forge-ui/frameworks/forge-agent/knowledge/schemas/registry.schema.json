@@ -1,0 +1,189 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://forge.local/schemas/registry.schema.json",
+  "title": "Agent Registry Schema",
+  "description": "Rich registry for discovering, routing to, and invoking agents across local and remote sources",
+  "type": "object",
+  "required": ["version", "agents"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Registry schema version"
+    },
+    "orchestrator": {
+      "type": "string",
+      "description": "Name of the orchestrator using this registry"
+    },
+    "agents": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/agentEntry"
+      },
+      "description": "Map of agent names to their full entries"
+    },
+    "skillIndex": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "Map of skill IDs to agent names for fast routing"
+    },
+    "routing": {
+      "$ref": "#/definitions/routingConfig"
+    },
+    "meta": {
+      "type": "object",
+      "properties": {
+        "lastUpdated": {
+          "type": "string",
+          "format": "date",
+          "description": "When registry was last modified"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Human-readable notes about registry state"
+        }
+      }
+    }
+  },
+  "definitions": {
+    "agentEntry": {
+      "type": "object",
+      "required": ["location", "displayName", "description"],
+      "properties": {
+        "location": {
+          "oneOf": [
+            {
+              "type": "object",
+              "required": ["type", "path"],
+              "properties": {
+                "type": { "const": "local" },
+                "path": {
+                  "type": "string",
+                  "description": "Relative path to agent directory"
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": ["type", "repo"],
+              "properties": {
+                "type": { "const": "git" },
+                "repo": {
+                  "type": "string",
+                  "description": "Git repository URL (e.g., github.com/user/repo)"
+                },
+                "branch": {
+                  "type": "string",
+                  "default": "main",
+                  "description": "Branch to use"
+                },
+                "repoPath": {
+                  "type": "string",
+                  "description": "Subdirectory within repo if agent isn't at root"
+                },
+                "localPath": {
+                  "type": "string",
+                  "description": "Where to clone locally (default: ./agents/external/{name})"
+                }
+              },
+              "additionalProperties": false
+            }
+          ],
+          "description": "Where to find this agent"
+        },
+        "context": {
+          "type": "string",
+          "enum": ["personal", "work", "shared"],
+          "description": "What context this agent operates in"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Human-readable agent name"
+        },
+        "role": {
+          "type": "string",
+          "description": "Agent's role (e.g., 'Sous Chef', 'Admin Assistant')"
+        },
+        "description": {
+          "type": "string",
+          "description": "Brief description of what the agent does"
+        },
+        "personality": {
+          "type": "string",
+          "description": "Brief personality description"
+        },
+        "signals": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Keywords/phrases that trigger routing to this agent"
+        },
+        "skills": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "description"],
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]*$",
+                "description": "Skill identifier (kebab-case)"
+              },
+              "name": {
+                "type": "string",
+                "description": "Human-readable skill name"
+              },
+              "description": {
+                "type": "string",
+                "description": "What this skill does"
+              },
+              "triggers": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "Phrases that trigger this skill"
+              }
+            }
+          },
+          "description": "A2A-aligned skills for routing"
+        },
+        "mcps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name"],
+            "properties": {
+              "name": { "type": "string" },
+              "required": { "type": "boolean", "default": true }
+            }
+          },
+          "description": "MCP integrations this agent uses"
+        },
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether this agent is active in the registry"
+        }
+      }
+    },
+    "routingConfig": {
+      "type": "object",
+      "properties": {
+        "defaultAgent": {
+          "type": ["string", "null"],
+          "description": "Agent to use when no routing match found"
+        },
+        "switchCommands": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Phrases that trigger direct agent connection"
+        },
+        "multiAgentTriggers": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Phrases that indicate multi-agent routing"
+        }
+      }
+    }
+  }
+}

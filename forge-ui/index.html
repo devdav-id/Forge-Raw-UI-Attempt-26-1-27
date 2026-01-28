@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forge UI - AI Chat Interface</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="custom.css">
+</head>
+<body>
+    <!-- ============================================
+         FORGE UI - MODULAR BUILDING BLOCKS
+
+         This HTML is designed as customizable blocks.
+         You can rearrange, remove, or duplicate any
+         section marked with BLOCK comments.
+
+         CSS classes are semantic and independent.
+         ============================================ -->
+
+    <div class="forge-app">
+
+        <!-- ========== BLOCK: HEADER ========== -->
+        <header class="forge-header">
+            <div class="forge-header__logo">
+                <span class="forge-header__title">Forge UI</span>
+                <span class="forge-header__subtitle">AI Chat Interface</span>
+            </div>
+            <div class="forge-header__actions">
+                <button class="forge-button forge-button--secondary" id="clearChat">
+                    Clear Chat
+                </button>
+                <button class="forge-button forge-button--secondary" id="toggleTheme">
+                    Toggle Theme
+                </button>
+            </div>
+        </header>
+        <!-- ========== END BLOCK: HEADER ========== -->
+
+
+        <!-- ========== BLOCK: MAIN CONTAINER ========== -->
+        <main class="forge-main">
+
+            <!-- ========== BLOCK: SIDEBAR (optional) ========== -->
+            <aside class="forge-sidebar">
+                <div class="forge-sidebar__section">
+                    <h3 class="forge-sidebar__heading">Status</h3>
+                    <div class="forge-status" id="connectionStatus">
+                        <span class="forge-status__indicator forge-status__indicator--ready"></span>
+                        <span class="forge-status__text">Ready</span>
+                    </div>
+                </div>
+                <div class="forge-sidebar__section">
+                    <h3 class="forge-sidebar__heading">Framework (read)</h3>
+                    <div class="forge-sidebar__value" id="frameworkDirectory">
+                        Loading...
+                    </div>
+                </div>
+                <div class="forge-sidebar__section">
+                    <h3 class="forge-sidebar__heading">Workspace (write)</h3>
+                    <div class="forge-sidebar__value" id="workspaceDirectory">
+                        Loading...
+                    </div>
+                </div>
+                <div class="forge-sidebar__section">
+                    <h3 class="forge-sidebar__heading">Skills</h3>
+                    <ul class="forge-tool-list">
+                        <li class="forge-tool-list__item">Loading...</li>
+                    </ul>
+                </div>
+            </aside>
+            <!-- ========== END BLOCK: SIDEBAR ========== -->
+
+
+            <!-- ========== BLOCK: CHAT CONTAINER ========== -->
+            <div class="forge-chat">
+
+                <!-- ========== BLOCK: MESSAGES AREA ========== -->
+                <div class="forge-messages" id="messagesContainer">
+
+                    <!-- SAMPLE MESSAGES - Delete these after testing styles -->
+
+                    <!-- System -->
+                    <div class="forge-message forge-message--system">
+                        <div class="forge-message__icon"><span class="forge-icon forge-icon--system"></span></div>
+                        <div class="forge-message__content">
+                            <div class="forge-message__header"><span class="forge-message__role">System</span></div>
+                            <div class="forge-message__body">Framework loaded. Files write to /workspace, framework is read-only.</div>
+                        </div>
+                    </div>
+
+                    <!-- User -->
+                    <div class="forge-message forge-message--user">
+                        <div class="forge-message__icon"><span class="forge-icon forge-icon--user"></span></div>
+                        <div class="forge-message__content">
+                            <div class="forge-message__header"><span class="forge-message__role">You</span></div>
+                            <div class="forge-message__body">Create a new agent called "research-assistant"</div>
+                        </div>
+                    </div>
+
+                    <!-- Tool Use -->
+                    <div class="forge-message forge-message--tool-use">
+                        <div class="forge-message__icon"><span class="forge-icon forge-icon--tool"></span></div>
+                        <div class="forge-message__content">
+                            <div class="forge-message__header">
+                                <span class="forge-message__role">Tool Call</span>
+                                <span class="forge-tool-name">create_directory</span>
+                            </div>
+                            <div class="forge-message__body">
+                                <pre class="forge-code forge-code--json">{"path": "agents/research-assistant"}</pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tool Result Success -->
+                    <div class="forge-message forge-message--tool-result">
+                        <div class="forge-message__icon"><span class="forge-icon forge-icon--result"></span></div>
+                        <div class="forge-message__content">
+                            <div class="forge-message__header">
+                                <span class="forge-message__role">Tool Result</span>
+                                <span class="forge-tool-name">create_directory</span>
+                                <span class="forge-tool-status forge-tool-status--success">Success</span>
+                            </div>
+                            <div class="forge-message__body">
+                                <pre class="forge-code">Created: workspace/agents/research-assistant</pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Assistant -->
+                    <div class="forge-message forge-message--assistant">
+                        <div class="forge-message__icon"><span class="forge-icon forge-icon--assistant"></span></div>
+                        <div class="forge-message__content">
+                            <div class="forge-message__header"><span class="forge-message__role">Forge</span></div>
+                            <div class="forge-message__body">I've created the directory structure for your new agent. Now I'll create the CLAUDE.md and agent.json files with the research assistant configuration.</div>
+                        </div>
+                    </div>
+
+                    <!-- Error -->
+                    <div class="forge-message forge-message--error">
+                        <div class="forge-message__icon"><span class="forge-icon forge-icon--error"></span></div>
+                        <div class="forge-message__content">
+                            <div class="forge-message__header"><span class="forge-message__role">Error</span></div>
+                            <div class="forge-message__body">Rate limit exceeded. Please wait a moment before trying again.</div>
+                        </div>
+                    </div>
+
+                    <!-- Thinking -->
+                    <div class="forge-message forge-message--thinking">
+                        <div class="forge-message__icon"><span class="forge-icon forge-icon--thinking"></span></div>
+                        <div class="forge-message__content">
+                            <div class="forge-message__header"><span class="forge-message__role">Thinking</span></div>
+                            <div class="forge-message__body">Analyzing the framework structure to determine the best approach...</div>
+                        </div>
+                    </div>
+
+                </div>
+                <!-- ========== END BLOCK: MESSAGES AREA ========== -->
+
+
+                <!-- ========== BLOCK: INPUT AREA ========== -->
+                <div class="forge-input-area">
+                    <div class="forge-input-wrapper">
+                        <textarea
+                            class="forge-input"
+                            id="userInput"
+                            placeholder="Type your message... (Shift+Enter for new line)"
+                            rows="1"
+                        ></textarea>
+                        <button class="forge-button forge-button--primary forge-button--send" id="sendButton">
+                            <span class="forge-button__text">Send</span>
+                            <span class="forge-button__icon">&#10148;</span>
+                        </button>
+                    </div>
+                    <div class="forge-input-hints">
+                        <span class="forge-input-hint">Press Enter to send</span>
+                        <span class="forge-input-hint">Shift+Enter for new line</span>
+                    </div>
+                </div>
+                <!-- ========== END BLOCK: INPUT AREA ========== -->
+
+            </div>
+            <!-- ========== END BLOCK: CHAT CONTAINER ========== -->
+
+        </main>
+        <!-- ========== END BLOCK: MAIN CONTAINER ========== -->
+
+
+        <!-- ========== BLOCK: FOOTER (optional) ========== -->
+        <footer class="forge-footer">
+            <span class="forge-footer__text">Powered by Anthropic Claude API</span>
+        </footer>
+        <!-- ========== END BLOCK: FOOTER ========== -->
+
+    </div>
+
+    <!-- ============================================
+         MESSAGE TEMPLATES
+
+         These templates are used by JavaScript to
+         create new messages. You can customize the
+         HTML structure here.
+         ============================================ -->
+    <template id="template-message-user">
+        <div class="forge-message forge-message--user">
+            <div class="forge-message__icon">
+                <span class="forge-icon forge-icon--user"></span>
+            </div>
+            <div class="forge-message__content">
+                <div class="forge-message__header">
+                    <span class="forge-message__role">You</span>
+                    <span class="forge-message__time"></span>
+                </div>
+                <div class="forge-message__body"></div>
+            </div>
+        </div>
+    </template>
+
+    <template id="template-message-assistant">
+        <div class="forge-message forge-message--assistant">
+            <div class="forge-message__icon">
+                <span class="forge-icon forge-icon--assistant"></span>
+            </div>
+            <div class="forge-message__content">
+                <div class="forge-message__header">
+                    <span class="forge-message__role">Agent</span>
+                    <span class="forge-message__time"></span>
+                </div>
+                <div class="forge-message__body"></div>
+            </div>
+        </div>
+    </template>
+
+    <template id="template-message-tool-use">
+        <div class="forge-message forge-message--tool-use">
+            <div class="forge-message__icon">
+                <span class="forge-icon forge-icon--tool"></span>
+            </div>
+            <div class="forge-message__content">
+                <div class="forge-message__header">
+                    <span class="forge-message__role">Tool Call</span>
+                    <span class="forge-tool-name"></span>
+                </div>
+                <div class="forge-message__body">
+                    <div class="forge-tool-input">
+                        <pre class="forge-code forge-code--json"></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <template id="template-message-tool-result">
+        <div class="forge-message forge-message--tool-result">
+            <div class="forge-message__icon">
+                <span class="forge-icon forge-icon--result"></span>
+            </div>
+            <div class="forge-message__content">
+                <div class="forge-message__header">
+                    <span class="forge-message__role">Tool Result</span>
+                    <span class="forge-tool-name"></span>
+                    <span class="forge-tool-status"></span>
+                </div>
+                <div class="forge-message__body">
+                    <div class="forge-tool-output">
+                        <pre class="forge-code"></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <template id="template-message-error">
+        <div class="forge-message forge-message--error">
+            <div class="forge-message__icon">
+                <span class="forge-icon forge-icon--error"></span>
+            </div>
+            <div class="forge-message__content">
+                <div class="forge-message__header">
+                    <span class="forge-message__role">Error</span>
+                </div>
+                <div class="forge-message__body"></div>
+            </div>
+        </div>
+    </template>
+
+    <template id="template-message-thinking">
+        <div class="forge-message forge-message--thinking">
+            <div class="forge-message__icon">
+                <span class="forge-icon forge-icon--thinking"></span>
+            </div>
+            <div class="forge-message__content">
+                <div class="forge-message__header">
+                    <span class="forge-message__role">Thinking</span>
+                </div>
+                <div class="forge-message__body"></div>
+            </div>
+        </div>
+    </template>
+
+    <template id="template-code-block">
+        <div class="forge-code-block">
+            <div class="forge-code-block__header">
+                <span class="forge-code-block__language"></span>
+                <button class="forge-code-block__copy">Copy</button>
+            </div>
+            <pre class="forge-code"><code></code></pre>
+        </div>
+    </template>
+
+    <!-- Loading indicator template -->
+    <template id="template-loading">
+        <div class="forge-loading">
+            <span class="forge-loading__dot"></span>
+            <span class="forge-loading__dot"></span>
+            <span class="forge-loading__dot"></span>
+        </div>
+    </template>
+
+    <script src="app.js"></script>
+</body>
+</html>
