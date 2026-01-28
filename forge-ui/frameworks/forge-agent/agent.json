@@ -1,0 +1,398 @@
+{
+  "name": "forge",
+  "displayName": "Forge",
+  "version": "3.0.0",
+  "description": "Developer agent for building sub-agents, orchestrators, and complete agent systems",
+  "role": "Developer",
+  "personality": "Precise, systematic, patient. The architect who sees both big picture and details.",
+
+  "context": "shared",
+
+  "skills": [
+    {
+      "id": "create-agent",
+      "name": "Create Agent",
+      "description": "Create a new sub-agent with full A2A-compliant structure",
+      "triggers": ["create an agent", "new agent", "build an agent for", "make an agent"]
+    },
+    {
+      "id": "create-orchestrator",
+      "name": "Create Orchestrator",
+      "description": "Create an orchestrator agent that routes to and coordinates sub-agents",
+      "triggers": ["create orchestrator", "build orchestrator", "make orchestrator", "routing agent"]
+    },
+    {
+      "id": "scaffold-system",
+      "name": "Scaffold System",
+      "description": "Scaffold a complete agent system with orchestrator, agents, and shared context",
+      "triggers": ["scaffold system", "create system", "build system", "new agent system", "full infrastructure"]
+    },
+    {
+      "id": "analyze-project",
+      "name": "Analyze Project",
+      "description": "Analyze an external project for standards compliance",
+      "triggers": ["analyze this project", "check standards", "audit", "review project"]
+    },
+    {
+      "id": "apply-standards",
+      "name": "Apply Standards",
+      "description": "Apply standards to a project or agent",
+      "triggers": ["apply standards", "bring up to standards", "standardize", "add standards"]
+    },
+    {
+      "id": "evolve-standard",
+      "name": "Evolve Standard",
+      "description": "Propose and implement changes to standards",
+      "triggers": ["update standard", "change standard", "evolve", "improve standard"]
+    },
+    {
+      "id": "debug-infrastructure",
+      "name": "Debug Infrastructure",
+      "description": "Debug agent infrastructure issues",
+      "triggers": ["debug", "something's broken", "not working", "fix infrastructure"]
+    },
+    {
+      "id": "validate-agent",
+      "name": "Validate Agent",
+      "description": "Validate an agent's compliance with standards",
+      "triggers": ["validate", "check agent", "is this compliant", "verify agent"]
+    }
+  ],
+
+  "invocation": {
+    "type": "claude-subprocess",
+    "systemPrompt": "./CLAUDE.md",
+    "knowledgePath": "./knowledge"
+  },
+
+  "provider": {
+    "name": "Jacob Brain"
+  },
+
+  "capabilities": [
+    {
+      "name": "create_agent",
+      "description": "Create a new sub-agent with full A2A-compliant structure",
+      "inputSchema": {
+        "type": "object",
+        "required": ["name", "domain"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Agent identifier (lowercase)"
+          },
+          "displayName": {
+            "type": "string",
+            "description": "Human-readable name"
+          },
+          "domain": {
+            "type": "string",
+            "description": "What domain this agent covers"
+          },
+          "skills": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "List of skills needed"
+          },
+          "mcpDependencies": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "MCP servers this agent needs"
+          },
+          "personality": {
+            "type": "string",
+            "description": "Personality/voice description"
+          },
+          "context": {
+            "type": "string",
+            "enum": ["personal", "work", "shared"],
+            "description": "Who can use this agent"
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "agentPath": { "type": "string" },
+          "filesCreated": { "type": "array", "items": { "type": "string" } },
+          "nextSteps": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    {
+      "name": "create_orchestrator",
+      "description": "Create an orchestrator agent that coordinates sub-agents",
+      "inputSchema": {
+        "type": "object",
+        "required": ["name", "agents"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Orchestrator name"
+          },
+          "agents": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Sub-agents this orchestrator will coordinate"
+          },
+          "personality": {
+            "type": "string",
+            "description": "Orchestrator personality"
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "systemPath": { "type": "string" },
+          "filesCreated": { "type": "array", "items": { "type": "string" } },
+          "registryPath": { "type": "string" }
+        }
+      }
+    },
+    {
+      "name": "scaffold_system",
+      "description": "Scaffold a complete agent system from scratch",
+      "inputSchema": {
+        "type": "object",
+        "required": ["name", "purpose"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "System name"
+          },
+          "purpose": {
+            "type": "string",
+            "description": "What this system is for"
+          },
+          "archetype": {
+            "type": "string",
+            "enum": ["single-agent", "personal-assistant", "team-orchestrator", "hierarchical"],
+            "description": "Architecture pattern to use"
+          },
+          "agents": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Initial agents to create"
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "systemPath": { "type": "string" },
+          "structure": { "type": "object" },
+          "nextSteps": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    {
+      "name": "analyze_project",
+      "description": "Analyze an external project for standards compliance",
+      "inputSchema": {
+        "type": "object",
+        "required": ["projectPath"],
+        "properties": {
+          "projectPath": {
+            "type": "string",
+            "description": "Path to project"
+          },
+          "depth": {
+            "type": "string",
+            "enum": ["quick", "thorough"],
+            "default": "thorough"
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "currentState": { "type": "object" },
+          "gaps": { "type": "array" },
+          "recommendations": { "type": "array" },
+          "migrationPath": { "type": "array" }
+        }
+      }
+    },
+    {
+      "name": "apply_standards",
+      "description": "Apply standards to a project or agent",
+      "inputSchema": {
+        "type": "object",
+        "required": ["target"],
+        "properties": {
+          "target": {
+            "type": "string",
+            "description": "Project path or agent name"
+          },
+          "standards": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["agent-cards", "task-format", "observability", "coordination", "error-contracts"]
+            },
+            "description": "Which standards to apply"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "default": false,
+            "description": "Preview changes without applying"
+          }
+        }
+      }
+    },
+    {
+      "name": "evolve_standard",
+      "description": "Propose and implement changes to standards",
+      "inputSchema": {
+        "type": "object",
+        "required": ["standard", "proposal"],
+        "properties": {
+          "standard": {
+            "type": "string",
+            "enum": ["agent-protocol", "task-format", "observability", "coordination", "error-contracts", "schemas"],
+            "description": "Which standard to evolve"
+          },
+          "proposal": {
+            "type": "string",
+            "description": "Description of the proposed change"
+          },
+          "rationale": {
+            "type": "string",
+            "description": "Why this change is needed"
+          }
+        }
+      }
+    },
+    {
+      "name": "debug_infrastructure",
+      "description": "Debug agent infrastructure issues",
+      "inputSchema": {
+        "type": "object",
+        "required": ["symptoms"],
+        "properties": {
+          "symptoms": {
+            "type": "string",
+            "description": "What's going wrong"
+          },
+          "agentInvolved": {
+            "type": "string",
+            "description": "Which agent(s) are affected"
+          },
+          "context": {
+            "type": "string",
+            "description": "Additional context about the issue"
+          }
+        }
+      }
+    },
+    {
+      "name": "validate_agent",
+      "description": "Validate an agent's compliance with standards",
+      "inputSchema": {
+        "type": "object",
+        "required": ["agentPath"],
+        "properties": {
+          "agentPath": {
+            "type": "string",
+            "description": "Path to agent directory"
+          },
+          "strict": {
+            "type": "boolean",
+            "default": false,
+            "description": "Fail on warnings, not just errors"
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "valid": { "type": "boolean" },
+          "errors": { "type": "array" },
+          "warnings": { "type": "array" },
+          "suggestions": { "type": "array" }
+        }
+      }
+    }
+  ],
+
+  "signals": [
+    "create agent",
+    "new agent",
+    "build agent",
+    "create orchestrator",
+    "build orchestrator",
+    "scaffold system",
+    "agent infrastructure",
+    "standards",
+    "apply standards",
+    "debug infrastructure",
+    "validate agent",
+    "agent.json",
+    "schema"
+  ],
+
+  "dependencies": {
+    "mcps": [],
+    "agents": [],
+    "knowledge": [
+      "knowledge/standards-reference.md",
+      "knowledge/onboarding-patterns.md",
+      "knowledge/project-templates.md",
+      "knowledge/standards/agent-protocol.md",
+      "knowledge/standards/task-format.md",
+      "knowledge/standards/observability.md",
+      "knowledge/standards/coordination.md",
+      "knowledge/standards/error-contracts.md",
+      "knowledge/standards/subprocess-delegation.md",
+      "knowledge/patterns/orchestrator-patterns.md",
+      "knowledge/patterns/infrastructure-archetypes.md",
+      "knowledge/schemas/agent.schema.json",
+      "knowledge/schemas/task.schema.json",
+      "knowledge/schemas/registry.schema.json"
+    ]
+  },
+
+  "observability": {
+    "traceEnabled": true,
+    "spanName": "forge.operation",
+    "attributes": {
+      "agent.name": "forge",
+      "agent.role": "developer"
+    }
+  },
+
+  "coordination": {
+    "canDelegate": false,
+    "acceptsSubtasks": true,
+    "rules": [
+      {
+        "condition": "Creating agent that needs MCP integration",
+        "action": "Verify MCP is configured in .mcp.json before declaring dependency",
+        "scope": "domain"
+      },
+      {
+        "condition": "Creating orchestrator",
+        "action": "Reference orchestrator-patterns.md for complete guidance",
+        "scope": "domain"
+      },
+      {
+        "condition": "Scaffolding complete system",
+        "action": "Reference infrastructure-archetypes.md to choose appropriate pattern",
+        "scope": "domain"
+      },
+      {
+        "condition": "External project has breaking differences",
+        "action": "Document deviation rationale in project's own documentation",
+        "scope": "domain"
+      }
+    ]
+  },
+
+  "metadata": {
+    "author": "Jacob Brain",
+    "created": "2025-01-05",
+    "updated": "2026-01-08",
+    "tags": ["developer", "infrastructure", "standards", "meta", "orchestrator", "scaffolding"]
+  }
+}

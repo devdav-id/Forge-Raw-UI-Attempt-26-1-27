@@ -1,0 +1,179 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://forge.local/schemas/task.schema.json",
+  "title": "Task Request/Response Schema",
+  "description": "A2A-compatible task format for inter-agent communication",
+  "definitions": {
+    "taskRequest": {
+      "type": "object",
+      "required": ["id", "type", "payload"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique task identifier (UUID recommended)"
+        },
+        "type": {
+          "type": "string",
+          "description": "Task type matching agent capability name"
+        },
+        "payload": {
+          "type": "object",
+          "description": "Task-specific input data"
+        },
+        "context": {
+          "type": "object",
+          "properties": {
+            "conversationId": {
+              "type": "string",
+              "description": "ID linking related tasks in a conversation"
+            },
+            "parentTaskId": {
+              "type": "string",
+              "description": "ID of parent task if this is a subtask"
+            },
+            "user": {
+              "type": "string",
+              "description": "User identifier"
+            },
+            "timestamp": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "priority": {
+              "type": "string",
+              "enum": ["low", "normal", "high", "urgent"],
+              "default": "normal"
+            }
+          },
+          "description": "Contextual information for the task"
+        },
+        "routing": {
+          "type": "object",
+          "properties": {
+            "source": {
+              "type": "string",
+              "description": "Agent that initiated this task"
+            },
+            "target": {
+              "type": "string",
+              "description": "Agent this task is assigned to"
+            },
+            "delegationChain": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Chain of agents that have handled this task"
+            }
+          },
+          "description": "Routing metadata for multi-agent coordination"
+        },
+        "observability": {
+          "type": "object",
+          "properties": {
+            "traceId": {
+              "type": "string",
+              "description": "OpenTelemetry trace ID"
+            },
+            "spanId": {
+              "type": "string",
+              "description": "OpenTelemetry span ID"
+            },
+            "baggage": {
+              "type": "object",
+              "description": "Additional trace context"
+            }
+          },
+          "description": "OpenTelemetry context propagation"
+        }
+      }
+    },
+    "taskResponse": {
+      "type": "object",
+      "required": ["id", "status"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Task ID this response is for"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "in_progress", "completed", "failed", "cancelled", "input_required"],
+          "description": "Current task status"
+        },
+        "result": {
+          "type": "object",
+          "description": "Task output data (when completed)"
+        },
+        "error": {
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "string",
+              "description": "Error code for programmatic handling"
+            },
+            "message": {
+              "type": "string",
+              "description": "Human-readable error message"
+            },
+            "details": {
+              "type": "object",
+              "description": "Additional error context"
+            },
+            "recoverable": {
+              "type": "boolean",
+              "description": "Whether the task can be retried"
+            }
+          },
+          "description": "Error information (when failed)"
+        },
+        "metadata": {
+          "type": "object",
+          "properties": {
+            "startedAt": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "completedAt": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "duration_ms": {
+              "type": "integer",
+              "description": "Task duration in milliseconds"
+            },
+            "agent": {
+              "type": "string",
+              "description": "Agent that processed this task"
+            },
+            "retryCount": {
+              "type": "integer",
+              "default": 0
+            }
+          },
+          "description": "Execution metadata"
+        },
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string",
+                "description": "MIME type or artifact category"
+              },
+              "content": {
+                "type": "string",
+                "description": "Artifact content or reference"
+              }
+            }
+          },
+          "description": "Additional outputs (files, drafts, etc.)"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,6 @@
+# External projects being worked on
+projects/
+
+# OS files
+.DS_Store
+Thumbs.db

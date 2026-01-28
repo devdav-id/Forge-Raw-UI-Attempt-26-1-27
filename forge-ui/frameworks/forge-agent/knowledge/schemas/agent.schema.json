@@ -1,0 +1,278 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://forge.local/schemas/agent.schema.json",
+  "title": "Agent Card Schema",
+  "description": "A2A-compatible agent card defining skills, invocation, and metadata for federated agents",
+  "type": "object",
+  "required": ["name", "version", "description"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Agent identifier (lowercase, no spaces)"
+    },
+    "displayName": {
+      "type": "string",
+      "description": "Human-readable agent name"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version of the agent"
+    },
+    "description": {
+      "type": "string",
+      "description": "Brief description of what the agent does"
+    },
+    "role": {
+      "type": "string",
+      "description": "Agent's role in the system (e.g., 'Sous Chef', 'Admin Assistant')"
+    },
+    "personality": {
+      "type": "string",
+      "description": "Brief personality description for consistent interactions"
+    },
+    "skills": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "description"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$",
+            "description": "Skill identifier (kebab-case)"
+          },
+          "name": {
+            "type": "string",
+            "description": "Human-readable skill name"
+          },
+          "description": {
+            "type": "string",
+            "description": "What this skill does"
+          },
+          "triggers": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Phrases that trigger this skill for routing"
+          }
+        }
+      },
+      "description": "A2A-aligned skills this agent provides (preferred over capabilities)"
+    },
+    "context": {
+      "type": "string",
+      "enum": ["personal", "work", "shared"],
+      "description": "What context this agent operates in: personal (individual), work (team), shared (anyone)"
+    },
+    "invocation": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["claude-subprocess", "http", "grpc"],
+          "description": "How to invoke this agent"
+        },
+        "systemPrompt": {
+          "type": "string",
+          "description": "Relative path to system prompt file (e.g., './CLAUDE.md')"
+        },
+        "mcpConfig": {
+          "type": "string",
+          "description": "Relative path to MCP config file (e.g., './.mcp.json')"
+        },
+        "knowledgePath": {
+          "type": "string",
+          "description": "Relative path to knowledge directory (e.g., './knowledge')"
+        }
+      },
+      "description": "Self-describing invocation details for portable agents"
+    },
+    "provider": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Who maintains this agent"
+        },
+        "contact": {
+          "type": "string",
+          "description": "Contact email or URL"
+        }
+      },
+      "description": "A2A-standard provider information"
+    },
+    "capabilities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "description"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Capability identifier"
+          },
+          "description": {
+            "type": "string",
+            "description": "What this capability does"
+          },
+          "inputSchema": {
+            "type": "object",
+            "description": "JSON Schema for capability input"
+          },
+          "outputSchema": {
+            "type": "object",
+            "description": "JSON Schema for capability output"
+          }
+        }
+      },
+      "description": "List of capabilities this agent provides"
+    },
+    "signals": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Keywords/phrases that trigger routing to this agent"
+    },
+    "dependencies": {
+      "type": "object",
+      "properties": {
+        "mcps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name"],
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "MCP server name as defined in .mcp.json"
+              },
+              "required": {
+                "type": "boolean",
+                "default": true,
+                "description": "Whether this MCP is required for core functionality"
+              },
+              "capabilities": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Which agent capabilities need this MCP"
+              }
+            }
+          },
+          "description": "MCP servers this agent depends on"
+        },
+        "agents": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Other agents this agent may delegate to"
+        },
+        "knowledge": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Knowledge files this agent requires (relative paths)"
+        }
+      },
+      "description": "External dependencies for this agent"
+    },
+    "endpoints": {
+      "type": "object",
+      "properties": {
+        "task": {
+          "type": "string",
+          "description": "Endpoint for task requests (A2A protocol)"
+        },
+        "status": {
+          "type": "string",
+          "description": "Endpoint for status checks"
+        }
+      },
+      "description": "API endpoints if agent exposes any (future use)"
+    },
+    "observability": {
+      "type": "object",
+      "properties": {
+        "traceEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to emit OpenTelemetry traces"
+        },
+        "spanName": {
+          "type": "string",
+          "description": "Default span name for this agent's operations"
+        },
+        "attributes": {
+          "type": "object",
+          "description": "Default span attributes to include"
+        }
+      },
+      "description": "OpenTelemetry configuration for this agent"
+    },
+    "coordination": {
+      "type": "object",
+      "properties": {
+        "canDelegate": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether this agent can delegate to other agents"
+        },
+        "acceptsSubtasks": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether this agent can receive subtasks from orchestrator"
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "condition": {
+                "type": "string",
+                "description": "IF condition (natural language or structured)"
+              },
+              "action": {
+                "type": "string",
+                "description": "THEN action to take"
+              },
+              "scope": {
+                "type": "string",
+                "enum": ["domain", "global"],
+                "description": "Whether rule is domain-specific or global coordination"
+              }
+            }
+          },
+          "description": "XAgents-style IF-THEN rules for coordination"
+        }
+      },
+      "description": "Multi-agent coordination settings"
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "author": {
+          "type": "string"
+        },
+        "created": {
+          "type": "string",
+          "format": "date"
+        },
+        "updated": {
+          "type": "string",
+          "format": "date"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Additional metadata about the agent"
+    }
+  }
+}
