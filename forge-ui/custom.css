@@ -40,3 +40,19 @@
     padding: 1rem;
 	font-size: 10px;
 }
+
+.forge-message__body {
+    white-space: normal;
+}
+
+.forge-message {
+	width: 40%;
+}
+
+.forge-message--user {
+	margin-left: auto;
+}
+
+.forge-message--system {
+	margin-inline: auto;
+}

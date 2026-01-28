@@ -1,0 +1,133 @@
+{
+  "name": "food-routine",
+  "description": "Weekly food routine management - meal planning, grocery optimization, and dietary habit tracking",
+  "version": "1.0.0",
+  "skills": [
+    {
+      "name": "weekly-meal-planning",
+      "description": "Create and optimize weekly meal plans based on preferences, schedule, and variety goals",
+      "triggers": [
+        "plan meals",
+        "weekly menu",
+        "meal plan",
+        "what's for dinner this week",
+        "plan my food"
+      ]
+    },
+    {
+      "name": "grocery-list-generation",
+      "description": "Generate optimized grocery lists from meal plans, considering inventory and shopping patterns",
+      "triggers": [
+        "grocery list",
+        "shopping list",
+        "what to buy",
+        "groceries needed"
+      ]
+    },
+    {
+      "name": "recipe-rotation",
+      "description": "Suggest recipes based on rotation schedule, seasonal availability, and variety preferences",
+      "triggers": [
+        "recipe suggestions",
+        "what should I cook",
+        "recipe rotation",
+        "meal ideas"
+      ]
+    },
+    {
+      "name": "dietary-tracking",
+      "description": "Track dietary patterns, preferences, and restrictions for better meal planning",
+      "triggers": [
+        "dietary preferences",
+        "food restrictions",
+        "eating patterns",
+        "nutrition tracking"
+      ]
+    },
+    {
+      "name": "leftover-management",
+      "description": "Plan and track leftovers to minimize food waste and optimize meal efficiency",
+      "triggers": [
+        "leftovers",
+        "food waste",
+        "meal efficiency",
+        "reuse ingredients"
+      ]
+    },
+    {
+      "name": "routine-optimization",
+      "description": "Analyze and optimize weekly food routines for time, cost, and health goals",
+      "triggers": [
+        "optimize routine",
+        "improve meal planning",
+        "food routine analysis",
+        "weekly efficiency"
+      ]
+    }
+  ],
+  "signals": [
+    "food",
+    "meal",
+    "recipe",
+    "grocery",
+    "weekly",
+    "routine",
+    "cooking",
+    "planning",
+    "diet",
+    "nutrition"
+  ],
+  "context": "shared",
+  "invocation": {
+    "type": "subprocess",
+    "command": "claude",
+    "args": ["--files", "agents/food-routine/CLAUDE.md"],
+    "session": {
+      "persistent": true,
+      "id_pattern": "food-routine-{user_id}"
+    }
+  },
+  "dependencies": {
+    "mcps": [
+      {
+        "name": "filesystem",
+        "required": true,
+        "purpose": "Store meal plans, recipes, and user preferences"
+      }
+    ],
+    "knowledge_files": [
+      "knowledge/dietary-guidelines.md",
+      "knowledge/recipe-database.md",
+      "knowledge/shopping-optimization.md"
+    ]
+  },
+  "coordination": {
+    "if_then_rules": [
+      {
+        "condition": "meal_plan_created",
+        "action": "generate_grocery_list",
+        "description": "Automatically generate grocery list when meal plan is finalized"
+      },
+      {
+        "condition": "grocery_shopping_completed",
+        "action": "update_inventory_status",
+        "description": "Update ingredient availability after shopping"
+      },
+      {
+        "condition": "weekly_review_requested", 
+        "action": "analyze_routine_effectiveness",
+        "description": "Provide routine optimization insights during weekly reviews"
+      }
+    ]
+  },
+  "observability": {
+    "span_name_prefix": "food-routine",
+    "required_attributes": [
+      "agent.name",
+      "agent.role", 
+      "task.id",
+      "meal_plan.week",
+      "user.dietary_preferences"
+    ]
+  }
+}
