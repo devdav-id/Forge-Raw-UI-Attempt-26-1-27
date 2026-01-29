@@ -1,6 +1,6 @@
 # Forge UI
-
 A local web chat interface for Claude with tool execution capabilities.
+
 
 ## Quick Start
 
