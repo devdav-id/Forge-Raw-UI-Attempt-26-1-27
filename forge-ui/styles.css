@@ -663,12 +663,57 @@ html, body {
 
 .forge-tool-input,
 .forge-tool-output {
-    margin-top: var(--forge-spacing-sm);
+    margin-top: var(--forge-spacing-xs);
 }
 
 .forge-tool-output {
-    max-height: 300px;
+    max-height: 200px;
     overflow-y: auto;
+}
+
+/* Compact tool code blocks */
+.forge-message--tool-use .forge-code,
+.forge-message--tool-result .forge-code {
+    padding: var(--forge-spacing-xs) var(--forge-spacing-sm);
+    font-size: var(--forge-font-size-xs);
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+
+/* ============================================
+   TOOL MESSAGE STATES
+   ============================================ */
+
+/* -- Collapsed state for tool messages -- */
+.forge-tools-collapsed .forge-message--tool-use .forge-message__body,
+.forge-tools-collapsed .forge-message--tool-result .forge-message__body {
+    display: none;
+}
+
+.forge-tools-collapsed .forge-message--tool-use,
+.forge-tools-collapsed .forge-message--tool-result {
+    padding: 4px var(--forge-spacing-sm);
+    gap: var(--forge-spacing-xs);
+    opacity: 0.8;
+}
+
+.forge-tools-collapsed .forge-message--tool-use .forge-message__header,
+.forge-tools-collapsed .forge-message--tool-result .forge-message__header {
+    margin-bottom: 0;
+}
+
+/* -- Hidden state for tool messages -- */
+.forge-tools-hidden .forge-message--tool-use,
+.forge-tools-hidden .forge-message--tool-result {
+    display: none;
+}
+
+/* -- Button active state -- */
+.forge-button--active {
+    background: var(--forge-accent-subtle);
+    border-color: var(--forge-accent);
+    color: var(--forge-accent);
 }
 
 
@@ -790,6 +835,202 @@ html, body {
 
 .forge-button__icon {
     font-size: 14px;
+}
+
+.forge-button--icon {
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+    padding: 0;
+    font-size: 16px;
+    font-weight: 400;
+    border-radius: var(--forge-radius-sm);
+}
+
+
+/* ============================================
+   CONVERSATION LIST
+   ============================================ */
+
+.forge-sidebar__section--conversations {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 120px;
+    max-height: 300px;
+    overflow: hidden;
+}
+
+.forge-sidebar__heading-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--forge-spacing-sm);
+}
+
+.forge-sidebar__heading-row .forge-sidebar__heading {
+    margin-bottom: 0;
+}
+
+.forge-conversation-list {
+    list-style: none;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.forge-conversation-list__empty {
+    font-size: var(--forge-font-size-xs);
+    color: var(--forge-text-muted);
+    padding: var(--forge-spacing-sm);
+    text-align: center;
+}
+
+.forge-conversation-list__item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--forge-spacing-xs);
+    padding: var(--forge-spacing-sm);
+    margin: 2px 0;
+    background: var(--forge-bg-tertiary);
+    border-radius: var(--forge-radius-sm);
+    cursor: pointer;
+    transition: all var(--forge-transition-fast);
+}
+
+.forge-conversation-list__item:hover {
+    background: var(--forge-accent-subtle);
+}
+
+.forge-conversation-list__item--active {
+    background: var(--forge-accent-subtle);
+    border-left: 2px solid var(--forge-accent);
+}
+
+.forge-conversation-list__info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.forge-conversation-list__title {
+    font-size: var(--forge-font-size-xs);
+    color: var(--forge-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.forge-conversation-list__date {
+    font-size: 10px;
+    color: var(--forge-text-muted);
+}
+
+.forge-conversation-list__delete {
+    display: none;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--forge-text-muted);
+    font-size: 14px;
+    cursor: pointer;
+    border-radius: var(--forge-radius-sm);
+    transition: all var(--forge-transition-fast);
+}
+
+.forge-conversation-list__item:hover .forge-conversation-list__delete {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.forge-conversation-list__delete:hover {
+    background: var(--forge-color-error-bg);
+    color: var(--forge-color-error);
+}
+
+
+/* ============================================
+   AGENT LIST
+   ============================================ */
+
+.forge-sidebar__section--agents {
+    max-height: 200px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.forge-agent-list {
+    list-style: none;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.forge-agent-list__empty {
+    font-size: var(--forge-font-size-xs);
+    color: var(--forge-text-muted);
+    padding: var(--forge-spacing-sm);
+    text-align: center;
+}
+
+.forge-agent-list__item {
+    display: flex;
+    align-items: center;
+    gap: var(--forge-spacing-sm);
+    padding: var(--forge-spacing-sm);
+    margin: 2px 0;
+    background: var(--forge-bg-tertiary);
+    border-radius: var(--forge-radius-sm);
+    cursor: pointer;
+    transition: all var(--forge-transition-fast);
+}
+
+.forge-agent-list__item:hover {
+    background: var(--forge-accent-subtle);
+}
+
+.forge-agent-list__item--active {
+    background: var(--forge-accent-subtle);
+    border-left: 2px solid var(--forge-accent);
+}
+
+.forge-agent-list__icon {
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--forge-color-assistant-bg);
+    color: var(--forge-color-assistant);
+    border-radius: var(--forge-radius-sm);
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.forge-agent-list__info {
+    flex: 1;
+    min-width: 0;
+}
+
+.forge-agent-list__name {
+    font-size: var(--forge-font-size-xs);
+    font-weight: 500;
+    color: var(--forge-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.forge-agent-list__source {
+    font-size: 9px;
+    color: var(--forge-text-muted);
+    text-transform: uppercase;
 }
 
 

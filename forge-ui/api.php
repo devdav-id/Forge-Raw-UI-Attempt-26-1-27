@@ -259,13 +259,36 @@ function processStreamingResponse(array $messages, array $tools, string $systemP
 }
 
 /**
- * Load the framework's system prompt from CLAUDE.md
+ * Load the system prompt for an agent
  */
-function loadFrameworkPrompt(): string
+function loadAgentPrompt(?string $agentId = null): string
 {
-    // Check if WORKING_DIRECTORY has a CLAUDE.md file
-    if (defined('WORKING_DIRECTORY') && WORKING_DIRECTORY !== '') {
-        $claudeMdPath = WORKING_DIRECTORY . '/CLAUDE.md';
+    // If agent ID is provided, try to find its CLAUDE.md
+    if ($agentId) {
+        $agentPath = findAgentPath($agentId);
+        if ($agentPath) {
+            $claudeMdPath = $agentPath . '/CLAUDE.md';
+            if (file_exists($claudeMdPath)) {
+                $content = file_get_contents($claudeMdPath);
+                if ($content !== false) {
+                    return $content;
+                }
+            }
+
+            // If no CLAUDE.md, try to build prompt from agent.json
+            $agentJsonPath = $agentPath . '/agent.json';
+            if (file_exists($agentJsonPath)) {
+                $agentData = json_decode(file_get_contents($agentJsonPath), true);
+                if ($agentData) {
+                    return buildPromptFromAgentJson($agentData);
+                }
+            }
+        }
+    }
+
+    // Fall back to framework's CLAUDE.md
+    if (defined('FRAMEWORK_DIRECTORY') && FRAMEWORK_DIRECTORY !== '') {
+        $claudeMdPath = FRAMEWORK_DIRECTORY . '/CLAUDE.md';
         if (file_exists($claudeMdPath)) {
             $content = file_get_contents($claudeMdPath);
             if ($content !== false) {
@@ -283,6 +306,78 @@ function loadFrameworkPrompt(): string
 }
 
 /**
+ * Find the path to an agent by ID
+ */
+function findAgentPath(string $id): ?string
+{
+    // Check framework directory
+    if (defined('FRAMEWORK_DIRECTORY')) {
+        // Main framework agent
+        $frameworkAgentJson = FRAMEWORK_DIRECTORY . '/agent.json';
+        if (file_exists($frameworkAgentJson)) {
+            $data = json_decode(file_get_contents($frameworkAgentJson), true);
+            if ($data && ($data['name'] ?? '') === $id) {
+                return FRAMEWORK_DIRECTORY;
+            }
+        }
+
+        // Sub-agents in framework
+        $subAgentPath = FRAMEWORK_DIRECTORY . '/agents/' . $id;
+        if (is_dir($subAgentPath) && file_exists($subAgentPath . '/agent.json')) {
+            return $subAgentPath;
+        }
+    }
+
+    // Check workspace/agents
+    if (defined('WORKSPACE_DIRECTORY')) {
+        $workspacePath = WORKSPACE_DIRECTORY . '/agents/' . $id;
+        if (is_dir($workspacePath) && file_exists($workspacePath . '/agent.json')) {
+            return $workspacePath;
+        }
+    }
+
+    return null;
+}
+
+/**
+ * Build a system prompt from agent.json data
+ */
+function buildPromptFromAgentJson(array $data): string
+{
+    $name = $data['displayName'] ?? $data['name'] ?? 'Agent';
+    $description = $data['description'] ?? '';
+    $role = $data['role'] ?? '';
+    $personality = $data['personality'] ?? '';
+
+    $prompt = "You are {$name}";
+    if ($role) {
+        $prompt .= ", a {$role}";
+    }
+    $prompt .= ".\n\n";
+
+    if ($description) {
+        $prompt .= "Description: {$description}\n\n";
+    }
+
+    if ($personality) {
+        $prompt .= "Personality: {$personality}\n\n";
+    }
+
+    // Add skills if available
+    $skills = $data['skills'] ?? [];
+    if (!empty($skills)) {
+        $prompt .= "Your skills include:\n";
+        foreach ($skills as $skill) {
+            $skillName = $skill['name'] ?? $skill['id'] ?? 'Unknown';
+            $skillDesc = $skill['description'] ?? '';
+            $prompt .= "- {$skillName}: {$skillDesc}\n";
+        }
+    }
+
+    return $prompt;
+}
+
+/**
  * Main chat handler
  */
 function handleChat(): void
@@ -296,9 +391,10 @@ function handleChat(): void
     }
 
     $messages = $data['messages'] ?? [];
+    $agentId = $data['agentId'] ?? null;
 
-    // Load system prompt from framework's CLAUDE.md
-    $systemPrompt = loadFrameworkPrompt();
+    // Load system prompt for the selected agent
+    $systemPrompt = loadAgentPrompt($agentId);
 
     if (empty($messages)) {
         sendError('No messages provided');

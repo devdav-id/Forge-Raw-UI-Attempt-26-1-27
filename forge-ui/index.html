@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Forge UI - AI Chat Interface</title>
@@ -29,6 +30,12 @@
                 <button class="forge-button forge-button--secondary" id="clearChat">
                     Clear Chat
                 </button>
+                <button class="forge-button forge-button--secondary forge-button--active" id="toggleToolsCollapse" title="Expand/Collapse tool messages">
+                    Expand Tools
+                </button>
+                <button class="forge-button forge-button--secondary" id="toggleToolsVisibility" title="Show/Hide tool messages">
+                    Hide Tools
+                </button>
                 <button class="forge-button forge-button--secondary" id="toggleTheme">
                     Toggle Theme
                 </button>
@@ -42,12 +49,32 @@
 
             <!-- ========== BLOCK: SIDEBAR (optional) ========== -->
             <aside class="forge-sidebar">
+                <!-- ========== BLOCK: CONVERSATIONS ========== -->
+                <div class="forge-sidebar__section forge-sidebar__section--conversations">
+                    <div class="forge-sidebar__heading-row">
+                        <h3 class="forge-sidebar__heading">Conversations</h3>
+                        <button class="forge-button forge-button--icon" id="newConversation" title="New conversation">+</button>
+                    </div>
+                    <ul class="forge-conversation-list" id="conversationList">
+                        <li class="forge-conversation-list__empty">No conversations yet</li>
+                    </ul>
+                </div>
+                <!-- ========== END BLOCK: CONVERSATIONS ========== -->
+
+                <!-- ========== BLOCK: AGENTS ========== -->
+                <div class="forge-sidebar__section forge-sidebar__section--agents">
+                    <h3 class="forge-sidebar__heading">Agents</h3>
+                    <ul class="forge-agent-list" id="agentList">
+                        <li class="forge-agent-list__empty">Loading agents...</li>
+                    </ul>
+                </div>
+                <!-- ========== END BLOCK: AGENTS ========== -->
+
                 <div class="forge-sidebar__section">
                     <h3 class="forge-sidebar__heading">Status</h3>
                     <div class="forge-status" id="connectionStatus">
                         <span class="forge-status__indicator forge-status__indicator--ready"></span>
                         <span class="forge-status__text">Ready</span>
-        <main class="forge-main">
                     </div>
                 </div>
                 <div class="forge-sidebar__section">
@@ -76,7 +103,7 @@
             <div class="forge-chat">
 
                 <!-- ========== BLOCK: MESSAGES AREA ========== -->
-                <div class="forge-messages" id="messagesContainer">
+                <div class="forge-messages forge-tools-collapsed" id="messagesContainer">
 
                     <!-- SAMPLE MESSAGES - Delete these after testing styles -->
                     <!-- System -->
@@ -314,6 +341,17 @@
             <span class="forge-loading__dot"></span>
             <span class="forge-loading__dot"></span>
         </div>
+    </template>
+
+    <!-- Conversation list item template -->
+    <template id="template-conversation-item">
+        <li class="forge-conversation-list__item">
+            <div class="forge-conversation-list__info">
+                <span class="forge-conversation-list__title"></span>
+                <span class="forge-conversation-list__date"></span>
+            </div>
+            <button class="forge-conversation-list__delete" title="Delete conversation">&times;</button>
+        </li>
     </template>
 
     <script src="app.js"></script>

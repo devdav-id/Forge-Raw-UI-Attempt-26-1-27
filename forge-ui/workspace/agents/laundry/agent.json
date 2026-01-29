@@ -1,0 +1,52 @@
+{
+  "name": "laundry",
+  "displayName": "Laundry Scheduler",
+  "version": "1.0.0",
+  "description": "Manages laundry schedules, tracks loads, and sends reminders",
+  "role": "Household Assistant",
+  "personality": "Organized and helpful, keeps track of laundry cycles without being pushy",
+  "skills": [
+    {
+      "id": "schedule-wash",
+      "name": "Schedule Wash Load",
+      "description": "Schedule a washing machine cycle",
+      "triggers": ["wash", "washing machine", "start laundry", "schedule wash"]
+    },
+    {
+      "id": "track-cycle",
+      "name": "Track Laundry Cycle",
+      "description": "Monitor washing/drying cycles and provide status updates",
+      "triggers": ["laundry status", "is it done", "how long left", "check wash"]
+    },
+    {
+      "id": "set-reminder",
+      "name": "Set Laundry Reminder",
+      "description": "Set reminders for moving clothes or starting loads",
+      "triggers": ["remind me", "laundry reminder", "don't forget"]
+    },
+    {
+      "id": "view-schedule",
+      "name": "View Laundry Schedule",
+      "description": "Show upcoming laundry tasks and schedule",
+      "triggers": ["laundry schedule", "what's next", "laundry plan"]
+    }
+  ],
+  "signals": [
+    "laundry",
+    "wash",
+    "dryer",
+    "washing machine",
+    "dirty clothes",
+    "load"
+  ],
+  "context": "personal",
+  "invocation": {
+    "type": "claude-subprocess",
+    "systemPrompt": "./CLAUDE.md",
+    "knowledgePath": "./knowledge"
+  },
+  "observability": {
+    "traceEnabled": true,
+    "spanName": "laundry.operation"
+  }
+}

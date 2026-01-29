@@ -28,6 +28,8 @@ const ForgeConfig = {
     // API endpoints
     apiEndpoint: 'api.php',
     infoEndpoint: 'info.php',
+    historyEndpoint: 'history.php',
+    agentsEndpoint: 'agents.php',
 
     // Agent name (loaded from server)
     agentName: 'Forge',
@@ -43,6 +45,12 @@ const ForgeConfig = {
 
     // Max messages to keep in history (0 = unlimited)
     maxHistoryMessages: 0,
+
+    // Auto-save conversations
+    autoSave: true,
+
+    // Show agent intro on new conversation
+    showAgentIntro: true,
 };
 
 
@@ -65,6 +73,29 @@ const ForgeState = {
 
     // Theme (dark is default)
     isLightMode: false,
+
+    // Tool messages collapsed (default: collapsed)
+    toolsCollapsed: true,
+
+    // Tool messages hidden
+    toolsHidden: false,
+
+    // Current conversation
+    currentConversation: {
+        id: null,
+        title: null,
+        created: null,
+        updated: null
+    },
+
+    // List of all conversations
+    conversations: [],
+
+    // Current agent
+    currentAgent: null,
+
+    // List of all agents
+    agents: [],
 };
 
 
@@ -78,8 +109,13 @@ const ForgeElements = {
     sendButton: null,
     clearButton: null,
     themeButton: null,
+    toolsCollapseButton: null,
+    toolsVisibilityButton: null,
     statusIndicator: null,
     statusText: null,
+    conversationList: null,
+    newConversationButton: null,
+    agentList: null,
 
     // Initialize DOM references
     init() {
@@ -88,8 +124,13 @@ const ForgeElements = {
         this.sendButton = document.getElementById('sendButton');
         this.clearButton = document.getElementById('clearChat');
         this.themeButton = document.getElementById('toggleTheme');
+        this.toolsCollapseButton = document.getElementById('toggleToolsCollapse');
+        this.toolsVisibilityButton = document.getElementById('toggleToolsVisibility');
         this.statusIndicator = document.querySelector('.forge-status__indicator');
         this.statusText = document.querySelector('.forge-status__text');
+        this.conversationList = document.getElementById('conversationList');
+        this.newConversationButton = document.getElementById('newConversation');
+        this.agentList = document.getElementById('agentList');
     }
 };
 
@@ -411,7 +452,7 @@ const ForgeAPI = {
                 },
                 body: JSON.stringify({
                     messages: ForgeState.messages,
-                    system: ForgeConfig.systemPrompt
+                    agentId: ForgeState.currentAgent?.id || null
                 })
             });
 
@@ -430,6 +471,9 @@ const ForgeAPI = {
             ForgeUI.setStatus('ready', 'Ready');
             ForgeUI.disableInput(false);
             ForgeMessages.finalizeAssistantMessage();
+
+            // Auto-save conversation
+            ForgeHistory.saveConversation();
         }
     },
 
@@ -567,12 +611,519 @@ const ForgeUI = {
             ForgeState.isLightMode = true;
             document.querySelector('.forge-app').classList.add('forge-light');
         }
+    },
+
+    /**
+     * Toggle tool messages collapsed state
+     */
+    toggleToolsCollapse() {
+        ForgeState.toolsCollapsed = !ForgeState.toolsCollapsed;
+        ForgeElements.messagesContainer.classList.toggle('forge-tools-collapsed', ForgeState.toolsCollapsed);
+        ForgeElements.toolsCollapseButton.classList.toggle('forge-button--active', ForgeState.toolsCollapsed);
+        ForgeElements.toolsCollapseButton.textContent = ForgeState.toolsCollapsed ? 'Expand Tools' : 'Collapse Tools';
+
+        // Save preference
+        localStorage.setItem('forge-tools-collapsed', ForgeState.toolsCollapsed);
+    },
+
+    /**
+     * Toggle tool messages visibility
+     */
+    toggleToolsVisibility() {
+        ForgeState.toolsHidden = !ForgeState.toolsHidden;
+        ForgeElements.messagesContainer.classList.toggle('forge-tools-hidden', ForgeState.toolsHidden);
+        ForgeElements.toolsVisibilityButton.classList.toggle('forge-button--active', ForgeState.toolsHidden);
+        ForgeElements.toolsVisibilityButton.textContent = ForgeState.toolsHidden ? 'Show Tools' : 'Hide Tools';
+
+        // Save preference
+        localStorage.setItem('forge-tools-hidden', ForgeState.toolsHidden);
+    },
+
+    /**
+     * Load saved tool preferences
+     */
+    loadToolPreferences() {
+        // Collapsed state (default: collapsed)
+        const collapsed = localStorage.getItem('forge-tools-collapsed');
+        if (collapsed === 'false') {
+            ForgeState.toolsCollapsed = false;
+            ForgeElements.toolsCollapseButton.classList.remove('forge-button--active');
+            ForgeElements.toolsCollapseButton.textContent = 'Collapse Tools';
+        } else {
+            // Default: collapsed
+            ForgeElements.messagesContainer.classList.add('forge-tools-collapsed');
+        }
+
+        // Hidden state
+        const hidden = localStorage.getItem('forge-tools-hidden');
+        if (hidden === 'true') {
+            ForgeState.toolsHidden = true;
+            ForgeElements.messagesContainer.classList.add('forge-tools-hidden');
+            ForgeElements.toolsVisibilityButton.classList.add('forge-button--active');
+            ForgeElements.toolsVisibilityButton.textContent = 'Show Tools';
+        }
     }
 };
 
 
 /* ============================================
-   8. UTILITIES
+   8. CHAT HISTORY
+   ============================================ */
+
+const ForgeHistory = {
+    /**
+     * Load all conversations from server
+     */
+    async loadConversations() {
+        try {
+            const response = await fetch(ForgeConfig.historyEndpoint);
+            const data = await response.json();
+
+            if (data.success) {
+                ForgeState.conversations = data.conversations || [];
+                this.renderConversationList();
+                return data.conversations;
+            }
+        } catch (error) {
+            console.warn('Could not load conversations:', error);
+        }
+        return [];
+    },
+
+    /**
+     * Load a specific conversation
+     */
+    async loadConversation(id) {
+        try {
+            const response = await fetch(`${ForgeConfig.historyEndpoint}?id=${id}`);
+            const data = await response.json();
+
+            if (data.success && data.conversation) {
+                // Set current conversation
+                ForgeState.currentConversation = {
+                    id: data.conversation.id,
+                    title: data.conversation.title,
+                    created: data.conversation.created,
+                    updated: data.conversation.updated
+                };
+
+                // Load messages
+                ForgeState.messages = data.conversation.messages || [];
+
+                // Render messages in UI
+                this.renderLoadedMessages();
+
+                // Update active state in list
+                this.setActiveConversation(id);
+
+                return data.conversation;
+            }
+        } catch (error) {
+            console.error('Could not load conversation:', error);
+        }
+        return null;
+    },
+
+    /**
+     * Save current conversation
+     */
+    async saveConversation() {
+        if (!ForgeConfig.autoSave) return;
+        if (ForgeState.messages.length === 0) return;
+
+        try {
+            const payload = {
+                id: ForgeState.currentConversation.id,
+                title: ForgeState.currentConversation.title,
+                created: ForgeState.currentConversation.created,
+                messages: ForgeState.messages
+            };
+
+            const response = await fetch(ForgeConfig.historyEndpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Update current conversation with server response
+                ForgeState.currentConversation.id = data.id;
+                ForgeState.currentConversation.title = data.title;
+                ForgeState.currentConversation.updated = data.updated;
+
+                // Refresh conversation list
+                await this.loadConversations();
+            }
+        } catch (error) {
+            console.warn('Could not save conversation:', error);
+        }
+    },
+
+    /**
+     * Delete a conversation
+     */
+    async deleteConversation(id) {
+        try {
+            const response = await fetch(`${ForgeConfig.historyEndpoint}?id=${id}`, {
+                method: 'DELETE'
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                // If we deleted the current conversation, start a new one
+                if (ForgeState.currentConversation.id === id) {
+                    this.startNewConversation();
+                }
+
+                // Refresh list
+                await this.loadConversations();
+                return true;
+            }
+        } catch (error) {
+            console.error('Could not delete conversation:', error);
+        }
+        return false;
+    },
+
+    /**
+     * Start a new conversation
+     */
+    startNewConversation(showIntro = true) {
+        // Reset state
+        ForgeState.currentConversation = {
+            id: null,
+            title: null,
+            created: null,
+            updated: null
+        };
+        ForgeState.messages = [];
+
+        // Clear UI messages (keep system message)
+        ForgeMessages.clearAll();
+
+        // Clear active state in list
+        this.setActiveConversation(null);
+
+        // Show agent intro for new conversations
+        if (showIntro && ForgeConfig.showAgentIntro && ForgeState.currentAgent) {
+            ForgeAgents.showAgentIntro();
+        }
+    },
+
+    /**
+     * Render loaded messages to UI
+     */
+    renderLoadedMessages() {
+        // Clear current messages (keep system message template for reference)
+        const systemMessage = ForgeElements.messagesContainer.querySelector('.forge-message--system');
+        ForgeElements.messagesContainer.innerHTML = '';
+
+        // Re-add system message
+        if (systemMessage) {
+            ForgeElements.messagesContainer.appendChild(systemMessage.cloneNode(true));
+        }
+
+        // Render each message
+        for (const msg of ForgeState.messages) {
+            if (msg.role === 'user') {
+                const element = ForgeTemplates.getMessageTemplate('user');
+                element.querySelector('.forge-message__body').textContent = msg.content;
+                ForgeElements.messagesContainer.appendChild(element);
+            } else if (msg.role === 'assistant') {
+                const element = ForgeTemplates.getMessageTemplate('assistant');
+                element.querySelector('.forge-message__role').textContent = ForgeConfig.agentName;
+                element.querySelector('.forge-message__body').innerHTML = ForgeMessages.formatMessageContent(msg.content);
+                ForgeElements.messagesContainer.appendChild(element);
+            }
+        }
+
+        ForgeMessages.scrollToBottom();
+    },
+
+    /**
+     * Render conversation list in sidebar
+     */
+    renderConversationList() {
+        const list = ForgeElements.conversationList;
+        if (!list) return;
+
+        if (ForgeState.conversations.length === 0) {
+            list.innerHTML = '<li class="forge-conversation-list__empty">No conversations yet</li>';
+            return;
+        }
+
+        list.innerHTML = ForgeState.conversations.map(conv => {
+            const date = new Date(conv.updated * 1000);
+            const dateStr = this.formatDate(date);
+            const isActive = ForgeState.currentConversation.id === conv.id;
+
+            return `
+                <li class="forge-conversation-list__item${isActive ? ' forge-conversation-list__item--active' : ''}"
+                    data-id="${conv.id}">
+                    <div class="forge-conversation-list__info">
+                        <span class="forge-conversation-list__title">${this.escapeHtml(conv.title)}</span>
+                        <span class="forge-conversation-list__date">${dateStr}</span>
+                    </div>
+                    <button class="forge-conversation-list__delete" data-id="${conv.id}" title="Delete">&times;</button>
+                </li>
+            `;
+        }).join('');
+
+        // Add click handlers
+        list.querySelectorAll('.forge-conversation-list__item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                // Don't trigger if clicking delete button
+                if (e.target.classList.contains('forge-conversation-list__delete')) return;
+
+                const id = item.dataset.id;
+                this.loadConversation(id);
+            });
+        });
+
+        // Add delete handlers
+        list.querySelectorAll('.forge-conversation-list__delete').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const id = btn.dataset.id;
+                if (confirm('Delete this conversation?')) {
+                    await this.deleteConversation(id);
+                }
+            });
+        });
+    },
+
+    /**
+     * Set active conversation in list
+     */
+    setActiveConversation(id) {
+        const items = ForgeElements.conversationList?.querySelectorAll('.forge-conversation-list__item');
+        items?.forEach(item => {
+            item.classList.toggle('forge-conversation-list__item--active', item.dataset.id === id);
+        });
+    },
+
+    /**
+     * Format date for display
+     */
+    formatDate(date) {
+        const now = new Date();
+        const diff = now - date;
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+        if (days === 0) {
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        } else if (days === 1) {
+            return 'Yesterday';
+        } else if (days < 7) {
+            return date.toLocaleDateString([], { weekday: 'short' });
+        } else {
+            return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+        }
+    },
+
+    /**
+     * Escape HTML
+     */
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+};
+
+
+/* ============================================
+   9. AGENTS
+   ============================================ */
+
+const ForgeAgents = {
+    /**
+     * Load all agents from server
+     */
+    async loadAgents() {
+        try {
+            const response = await fetch(ForgeConfig.agentsEndpoint);
+            const data = await response.json();
+
+            if (data.success) {
+                ForgeState.agents = data.agents || [];
+                this.renderAgentList();
+
+                // Set default agent (first one, usually Forge) - no switch message on init
+                if (ForgeState.agents.length > 0 && !ForgeState.currentAgent) {
+                    await this.selectAgent(ForgeState.agents[0].id, false); // false = no switch message
+                }
+
+                return data.agents;
+            }
+        } catch (error) {
+            console.warn('Could not load agents:', error);
+        }
+        return [];
+    },
+
+    /**
+     * Select an agent (switches agent in current conversation)
+     */
+    async selectAgent(agentId, showSwitchMessage = true) {
+        const agent = ForgeState.agents.find(a => a.id === agentId);
+        if (!agent) return;
+
+        // Don't do anything if already selected
+        if (ForgeState.currentAgent?.id === agentId) return;
+
+        const previousAgent = ForgeState.currentAgent;
+
+        // Load full agent details
+        try {
+            const response = await fetch(`${ForgeConfig.agentsEndpoint}?id=${agentId}`);
+            const data = await response.json();
+
+            if (data.success && data.agent) {
+                ForgeState.currentAgent = data.agent;
+
+                // Update UI with agent info
+                ForgeConfig.agentName = data.agent.name;
+
+                // Update header
+                const headerTitle = document.querySelector('.forge-header__title');
+                if (headerTitle) {
+                    headerTitle.textContent = data.agent.name;
+                }
+
+                // Update active state in list
+                this.setActiveAgent(agentId);
+
+                // Show switch message if switching mid-conversation
+                if (showSwitchMessage && previousAgent && ForgeState.messages.length > 0) {
+                    this.showAgentSwitchMessage(previousAgent.name, data.agent.name);
+                }
+            }
+        } catch (error) {
+            console.error('Could not load agent details:', error);
+        }
+    },
+
+    /**
+     * Show a system message when switching agents mid-conversation
+     */
+    showAgentSwitchMessage(fromName, toName) {
+        const element = ForgeTemplates.clone('template-message-user');
+        if (!element) return;
+
+        // Restyle as system message
+        element.classList.remove('forge-message--user');
+        element.classList.add('forge-message--system');
+        element.querySelector('.forge-message__role').textContent = 'System';
+        element.querySelector('.forge-message__body').textContent = `Switched from ${fromName} to ${toName}`;
+
+        // Update icon
+        const icon = element.querySelector('.forge-icon');
+        if (icon) {
+            icon.classList.remove('forge-icon--user');
+            icon.classList.add('forge-icon--system');
+        }
+
+        ForgeElements.messagesContainer.appendChild(element);
+        ForgeMessages.scrollToBottom();
+    },
+
+    /**
+     * Show agent introduction message
+     */
+    showAgentIntro() {
+        if (!ForgeConfig.showAgentIntro) return;
+        if (!ForgeState.currentAgent) return;
+
+        const intro = ForgeState.currentAgent.intro || ForgeState.currentAgent.description;
+        if (!intro) return;
+
+        // Add as assistant message
+        const element = ForgeTemplates.getMessageTemplate('assistant');
+        element.querySelector('.forge-message__role').textContent = ForgeConfig.agentName;
+        element.querySelector('.forge-message__body').textContent = intro;
+
+        ForgeElements.messagesContainer.appendChild(element);
+        ForgeMessages.scrollToBottom();
+
+        // Note: Don't add to state.messages - this is just UI, not history
+    },
+
+    /**
+     * Render agent list in sidebar
+     */
+    renderAgentList() {
+        const list = ForgeElements.agentList;
+        if (!list) return;
+
+        if (ForgeState.agents.length === 0) {
+            list.innerHTML = '<li class="forge-agent-list__empty">No agents found</li>';
+            return;
+        }
+
+        list.innerHTML = ForgeState.agents.map(agent => {
+            const isActive = ForgeState.currentAgent?.id === agent.id;
+            const initials = this.getInitials(agent.name);
+
+            return `
+                <li class="forge-agent-list__item${isActive ? ' forge-agent-list__item--active' : ''}"
+                    data-id="${agent.id}" title="${this.escapeHtml(agent.description)}">
+                    <div class="forge-agent-list__icon">${initials}</div>
+                    <div class="forge-agent-list__info">
+                        <span class="forge-agent-list__name">${this.escapeHtml(agent.name)}</span>
+                        <span class="forge-agent-list__source">${agent.source}</span>
+                    </div>
+                </li>
+            `;
+        }).join('');
+
+        // Add click handlers
+        list.querySelectorAll('.forge-agent-list__item').forEach(item => {
+            item.addEventListener('click', () => {
+                const id = item.dataset.id;
+                this.selectAgent(id, true);
+            });
+        });
+    },
+
+    /**
+     * Set active agent in list
+     */
+    setActiveAgent(id) {
+        const items = ForgeElements.agentList?.querySelectorAll('.forge-agent-list__item');
+        items?.forEach(item => {
+            item.classList.toggle('forge-agent-list__item--active', item.dataset.id === id);
+        });
+    },
+
+    /**
+     * Get initials from name
+     */
+    getInitials(name) {
+        return name
+            .split(/[\s-]+/)
+            .map(word => word[0])
+            .join('')
+            .toUpperCase()
+            .slice(0, 2);
+    },
+
+    /**
+     * Escape HTML
+     */
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+};
+
+
+/* ============================================
+   10. UTILITIES
    ============================================ */
 
 const ForgeUtils = {
@@ -629,16 +1180,31 @@ const ForgeEvents = {
             ForgeUtils.autoResizeTextarea(ForgeElements.userInput);
         });
 
-        // Clear chat button
+        // Clear chat button (starts a new conversation)
         ForgeElements.clearButton.addEventListener('click', () => {
-            if (confirm('Clear all messages?')) {
-                ForgeMessages.clearAll();
+            if (confirm('Start a new conversation?')) {
+                ForgeHistory.startNewConversation();
             }
         });
 
         // Theme toggle button
         ForgeElements.themeButton.addEventListener('click', () => {
             ForgeUI.toggleTheme();
+        });
+
+        // Tools collapse toggle button
+        ForgeElements.toolsCollapseButton.addEventListener('click', () => {
+            ForgeUI.toggleToolsCollapse();
+        });
+
+        // Tools visibility toggle button
+        ForgeElements.toolsVisibilityButton.addEventListener('click', () => {
+            ForgeUI.toggleToolsVisibility();
+        });
+
+        // New conversation button
+        ForgeElements.newConversationButton?.addEventListener('click', () => {
+            ForgeHistory.startNewConversation();
         });
     },
 
@@ -713,7 +1279,7 @@ async function loadFrameworkInfo() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     // Initialize DOM references
     ForgeElements.init();
 
@@ -723,8 +1289,22 @@ document.addEventListener('DOMContentLoaded', () => {
     // Load saved theme
     ForgeUI.loadTheme();
 
+    // Load saved tool preferences
+    ForgeUI.loadToolPreferences();
+
     // Load framework info (updates agent name, skills)
-    loadFrameworkInfo();
+    await loadFrameworkInfo();
+
+    // Load available agents (don't show switch message on initial load)
+    await ForgeAgents.loadAgents();
+
+    // Load conversations and restore the newest one
+    const conversations = await ForgeHistory.loadConversations();
+    if (conversations.length > 0) {
+        // Load the newest conversation (first in list, sorted by updated)
+        await ForgeHistory.loadConversation(conversations[0].id);
+    }
+    // Note: No intro on load - intro only shows when explicitly starting new conversation
 
     // Set initial status
     ForgeUI.setStatus('ready', 'Ready');
@@ -738,3 +1318,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Expose utilities globally for template onclick handlers
 window.ForgeUtils = ForgeUtils;
+window.ForgeHistory = ForgeHistory;
+window.ForgeAgents = ForgeAgents;
