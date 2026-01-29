@@ -1,1 +1,16 @@
 /compact.md
+# Ignore config file (contains API key)
+forge-ui/config.php
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# External projects being worked on
+forge-ui/frameworks/forge-agent/projects/
